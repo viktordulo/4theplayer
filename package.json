@@ -2,11 +2,12 @@
   "name": "4theplayer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build" : "tsc",
-    "start": "tsc && node dist/js/index.js"
+    "start": "tsc && node dist/js/app.js",
+    "watch:ts": "tsc -w"
   },
   "repository": {
     "type": "git",
