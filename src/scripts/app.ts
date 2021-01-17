@@ -1,3 +1,45 @@
+//#region Classes
+
+
+/** The class which control the projects (adding, listening for changes). */
+class ProjectState {
+    private listeners: Function[] = [];
+    private projects: any[] = [];
+    private static instance: ProjectState;
+
+    private constructor() {}
+
+    static getInstance(): ProjectState {
+        if (this.instance) {
+            return this.instance;
+        }
+        this.instance = new ProjectState();
+        return this.instance;
+    }
+
+
+    /** Adding a new project to the app. */
+    addProject(title: string, description: string, numOfPeople: number): void {
+        const newProject = {
+            id: Math.random().toString(),
+            title: title,
+            description: description,
+            people: numOfPeople
+        };
+        this.projects.push(newProject);
+        for (const listenerFn of this.listeners) {
+            listenerFn(this.projects.slice(-1));
+        }
+    }
+
+
+    addListener(listenerFn: Function): void {
+        this.listeners.push(listenerFn);
+    }
+}
+
+
+/** Class which displays the list of the projects and their content. */
 class ProjectList {
 
     /** The template element which we want to display. */
@@ -11,6 +53,9 @@ class ProjectList {
     /** Element which is inserted into @see hostElement */
     element: HTMLElement;
 
+
+    assignedProjects: any[] = [];
+
     constructor(private type: 'active' | 'finished') {
         this.templateElement = <HTMLTemplateElement>document.getElementById('project-list');
         this.hostElement = <HTMLDivElement>document.getElementById('app');
@@ -19,12 +64,27 @@ class ProjectList {
         this.element = <HTMLElement>importedNode.firstElementChild;
         this.element.id = `${this.type}-projects`;
 
+        projectState.addListener((projects: any[]) => {
+            this.assignedProjects = projects;
+            this.renderProjects();
+        });
+
         this.attach();
         this.renderContent();
     }
 
 
-    private renderContent() {
+    private renderProjects(): void {
+        const listEl = <HTMLUListElement>document.getElementById(`${this.type}-projects-list`);
+        for (const project of this.assignedProjects) {
+            const listItem = document.createElement('li');
+            listItem.textContent = project.title;
+            listEl.appendChild(listItem);
+        }
+    }
+
+
+    private renderContent(): void {
         const listId = `${this.type}-projects-list`;
         this.element.querySelector('ul')!.id = listId;
         this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
@@ -32,11 +92,13 @@ class ProjectList {
 
 
     /** Displays the template. */
-    private attach() {
+    private attach(): void {
         this.hostElement.insertAdjacentElement("beforeend", this.element);
     }
 }
 
+
+/** Class which is used for inputs. */
 class ProjectInput {
 
     /** The template element which we want to display. */
@@ -114,13 +176,13 @@ class ProjectInput {
 
 
     /** Receive the inputs when button pressed. */
-    private configure() {
+    private configure(): void {
         this.element.addEventListener('submit', (event: Event) => {
             event.preventDefault();
             const userInputs = this.gatherUserInput();
             if (Array.isArray(userInputs)) {
                 const [title, descr, people] = userInputs;
-                console.log(title, descr, people);
+                projectState.addProject(title, descr, people);
                 this.clearInputs();
             }
         });
@@ -128,7 +190,7 @@ class ProjectInput {
 
 
     /** Clearing input fields. */
-    private clearInputs() {
+    private clearInputs(): void {
         this.titleInputElement.value = '';
         this.descriptionInputElement.value = '';
         this.peopleInputElement.value = '';
@@ -136,14 +198,28 @@ class ProjectInput {
 
 
     /** Displays the template. */
-    private attach() {
+    private attach(): void {
         this.hostElement.insertAdjacentElement("afterbegin", this.element);
     }
 }
 
+
+//#endregion Classes
+// <------------------------------------------------------------------------------------------------------------------------------------------------>
+// <---------------------------------------------------------MAIN PROGRAM--------------------------------------------------------------------------->
+// <------------------------------------------------------------------------------------------------------------------------------------------------>
+
+
+const projectState = ProjectState.getInstance();
 const prjInput = new ProjectInput();
 const activePrjList = new ProjectList('active');
 const finishedPrjList = new ProjectList('finished');
+
+
+// <------------------------------------------------------------------------------------------------------------------------------------------------>
+// <------------------------------------------------------------------------------------------------------------------------------------------------>
+// <------------------------------------------------------------------------------------------------------------------------------------------------>
+
 
 
 //#region Validation
