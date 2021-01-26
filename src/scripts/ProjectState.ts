@@ -1,10 +1,20 @@
+import { Project, ProjectStatus } from "./Project.js";
+import { State } from "./State.js";
+
+
+// Custom type for listener functions.
+export type Listener<T> = (items: T[]) => void;
+
+
 /** The class which control the projects (adding, listening for changes). */
-export class ProjectState {
-    private listeners: Function[] = [];
-    private projects: any[] = [];
+export class ProjectState extends State<Project> {
+
+    private projects: Project[] = [];
     private static instance: ProjectState;
 
-    private constructor() {}
+    private constructor() {
+        super();
+    }
 
     static getInstance(): ProjectState {
         if (this.instance) {
@@ -17,20 +27,10 @@ export class ProjectState {
 
     /** Adding a new project to the app. */
     addProject(title: string, description: string, numOfPeople: number): void {
-        const newProject = {
-            id: Math.random().toString(),
-            title: title,
-            description: description,
-            people: numOfPeople
-        };
+        const newProject = new Project(Math.random().toString(), title, description, numOfPeople, ProjectStatus.Active)
         this.projects.push(newProject);
         for (const listenerFn of this.listeners) {
-            listenerFn(this.projects.slice(-1));
+            listenerFn(this.projects.slice());
         }
-    }
-
-
-    addListener(listenerFn: Function): void {
-        this.listeners.push(listenerFn);
     }
 }

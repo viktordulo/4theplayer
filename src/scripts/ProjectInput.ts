@@ -1,20 +1,9 @@
 import { projectState } from "./app.js";
+import { Component } from "./Component.js";
 import { Validatable, validate } from "./Validation.js";
 
 /** Class which is used for inputs. */
-export class ProjectInput {
-
-    /** The template element which we want to display. */
-    templateElement: HTMLTemplateElement;
-
-
-    /** The element which appends the template. */
-    hostElement: HTMLDivElement;
-
-
-    /** Element which is inserted into @see hostElement */
-    element: HTMLFormElement;
-
+export class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
 
     /** The title input.  */
     titleInputElement: HTMLInputElement;
@@ -29,20 +18,32 @@ export class ProjectInput {
 
 
     constructor() {
-        this.templateElement = <HTMLTemplateElement>document.getElementById('project-input');
-        this.hostElement = <HTMLDivElement>document.getElementById('app');
 
-        const importedNode = document.importNode(this.templateElement.content, true);
-        this.element = <HTMLFormElement>importedNode.firstElementChild;
-        this.element.id = 'user-input';
+        super('project-input', 'app', true, 'user-input');
 
         this.titleInputElement = <HTMLInputElement>this.element.querySelector('#title');
         this.descriptionInputElement = <HTMLInputElement>this.element.querySelector('#description');
         this.peopleInputElement = <HTMLInputElement>this.element.querySelector('#people');
 
         this.configure();
-        this.attach();
     }
+
+
+    /** Receive the inputs when button pressed. */
+    configure(): void {
+        this.element.addEventListener('submit', (event: Event) => {
+            event.preventDefault();
+            const userInputs = this.gatherUserInput();
+            if (Array.isArray(userInputs)) {
+                const [title, descr, people] = userInputs;
+                projectState.addProject(title, descr, people);
+                this.clearInputs();
+            }
+        });
+    }
+
+
+    renderContent(): void {};
 
 
     /** Gather the inputs values. */
@@ -78,20 +79,6 @@ export class ProjectInput {
     }
 
 
-    /** Receive the inputs when button pressed. */
-    private configure(): void {
-        this.element.addEventListener('submit', (event: Event) => {
-            event.preventDefault();
-            const userInputs = this.gatherUserInput();
-            if (Array.isArray(userInputs)) {
-                const [title, descr, people] = userInputs;
-                projectState.addProject(title, descr, people);
-                this.clearInputs();
-            }
-        });
-    }
-
-
     /** Clearing input fields. */
     private clearInputs(): void {
         this.titleInputElement.value = '';
@@ -99,9 +86,4 @@ export class ProjectInput {
         this.peopleInputElement.value = '';
     }
 
-
-    /** Displays the template. */
-    private attach(): void {
-        this.hostElement.insertAdjacentElement("afterbegin", this.element);
-    }
 }

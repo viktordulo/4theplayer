@@ -1,42 +1,45 @@
+import { Project, ProjectStatus } from './Project.js';
 import { projectState } from "./app.js";
+import { Component } from './Component.js';
 
 /** Class which displays the list of the projects and their content. */
-export class ProjectList {
+export class ProjectList extends Component<HTMLDivElement, HTMLElement> {
 
-    /** The template element which we want to display. */
-    templateElement: HTMLTemplateElement;
-
-
-    /** The element which appends the template. */
-    hostElement: HTMLDivElement;
-
-
-    /** Element which is inserted into @see hostElement */
-    element: HTMLElement;
-
-
-    assignedProjects: any[] = [];
+    assignedProjects: Project[] = [];
 
     constructor(private type: 'active' | 'finished') {
-        this.templateElement = <HTMLTemplateElement>document.getElementById('project-list');
-        this.hostElement = <HTMLDivElement>document.getElementById('app');
 
-        const importedNode = document.importNode(this.templateElement.content, true);
-        this.element = <HTMLElement>importedNode.firstElementChild;
-        this.element.id = `${this.type}-projects`;
+        super('project-list', 'app', false, `${type}-projects`);
 
-        projectState.addListener((projects: any[]) => {
-            this.assignedProjects = projects;
-            this.renderProjects();
-        });
-
-        this.attach();
+        this.configure();
         this.renderContent();
     }
 
 
+    configure(): void {
+        projectState.addListener((projects: Project[]) => {
+            const relevantProjects: Project[] = projects.filter((project) => {
+                if (this.type === 'active') {
+                    return project.status === ProjectStatus.Active;
+                }
+                return project.status === ProjectStatus.Finished;
+            })
+            this.assignedProjects = relevantProjects;
+            this.renderProjects();
+        });
+    }
+
+
+    renderContent(): void {
+        const listId = `${this.type}-projects-list`;
+        this.element.querySelector('ul')!.id = listId;
+        this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
+    }
+
+
     private renderProjects(): void {
-        const listEl = <HTMLUListElement>document.getElementById(`${this.type}-projects-list`);
+        const listEl: HTMLUListElement = <HTMLUListElement>document.getElementById(`${this.type}-projects-list`);
+        listEl.innerHTML = '';
         for (const project of this.assignedProjects) {
             const listItem = document.createElement('li');
             listItem.textContent = project.title;
@@ -44,16 +47,4 @@ export class ProjectList {
         }
     }
 
-
-    private renderContent(): void {
-        const listId = `${this.type}-projects-list`;
-        this.element.querySelector('ul')!.id = listId;
-        this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
-    }
-
-
-    /** Displays the template. */
-    private attach(): void {
-        this.hostElement.insertAdjacentElement("beforeend", this.element);
-    }
 }
